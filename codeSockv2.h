@@ -26,7 +26,7 @@ namespace TCP{
 		
 	SOCKET SINGLE_SOCKET,server,CServer;
 	bool clientLock=false,serverLock=false;
-	int SockOp=0;
+	int SockOp=0,ToSetting;
 	
 	template <typename T> class _dpVec{
 	private:
@@ -182,12 +182,26 @@ namespace TCP{
 		if(clientLock) return SendInfo.mNum;
 		else return -1;
 	}
+	void CLOSE(){
+		if(clientLock&&!serverLock) closesocket(CServer);
+		else if((serverLock&&!clientLock)&&!ToSetting){
+			closesocket(SINGLE_SOCKET);
+			closesocket(server);
+		}
+		else if((serverLock&&!clientLock)&&ToSetting){
+			for(int i=0;s.length()-1;i++) closesocket(s[i].client);
+			closesocket(server);
+		}
+		WSACleanup();
+	}
 	
 	const char* SERVER(int Port,int Options){
 		if(clientLock) return "ClientSocket Is Using Already";
 		else serverLock=true;
 		if(WSAStartup(MAKEWORD(2,2),&wsa)!=0) return "WSA Error";
-	
+		
+		ToSetting=Options;
+		
 		server = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
 		if(server==INVALID_SOCKET) return "ServerSocket Error";
 		
@@ -212,6 +226,8 @@ namespace TCP{
 		if(serverLock) return "ServerSocket Is Using Already";
 		else clientLock=true;
 		if(WSAStartup(MAKEWORD(2,2),&wsa)!=0) return "WSA Error";
+	
+		ToSetting=Options;
 	
 		CServer = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
 		if(CServer==INVALID_SOCKET) return "ClientSocket Error";
